@@ -242,23 +242,8 @@ class GameScene extends Phaser.Scene {
       color: "#ffffff",
       fontFamily: "Arial"
     }).setOrigin(1, 1).setScrollFactor(0).setDepth(30).setAlpha(0.3);
-    this._tryMeImg = this.add.image(0, 182.5, "GJ_WebSheet", "tryMe_001.png").setScrollFactor(0).setDepth(30);
+    this._tryMeImg = null;
     this._downloadBtns = [];
-    const _0x4fc67f = [{
-      key: "downloadSteam_001",
-      url: "https://github.com/web-dashers/web-dashers.github.io"
-    },
-    {
-      key: "downloadApple_001",
-      url: "https://discord.gg/TfEzAVWPSJ"
-    }];
-    for (let _0xfeaf5c = 0; _0xfeaf5c < _0x4fc67f.length; _0xfeaf5c++) {
-      const _0x1ce2a6 = _0x4fc67f[_0xfeaf5c];
-      const _0x6bf69f = 1 / 1.5;
-      const _0x1d293f = this.add.image(0, 0, "GJ_WebSheet", _0x1ce2a6.key + ".png").setScrollFactor(0).setDepth(30).setScale(_0x6bf69f).setInteractive();
-      this._makeBouncyButton(_0x1d293f, _0x6bf69f, () => window.open(_0x1ce2a6.url, "_blank"), () => this._menuActive);
-      this._downloadBtns.push(_0x1d293f);
-    }
     const _0x28fa5b = this.scale.isFullscreen;
 this._menuFsBtn = this.add.image(33, 33, "GJ_WebSheet", _0x28fa5b ? "toggleFullscreenOff_001.png" : "toggleFullscreenOn_001.png").setScrollFactor(0).setDepth(30).setScale(0.64).setAlpha(0.8).setTint(Phaser.Display.Color.GetColor(255, 255, 255)).setInteractive();
     this._expandHitArea(this._menuFsBtn, 1.5);
@@ -3676,6 +3661,7 @@ _buildSettingsPopup() {
       { text: "breadbb, PinkDev, rohanis0000,", scale: 0.7, font: "goldFont" },
       { text: "bog, AntiMatter, arbstro, aloaf", scale: 0.7, font: "goldFont" },
       { text: "Contributors:", scale: 0.9, font: "bigFont" },
+      { text: "Alberto Ortiz (alberto2005-coder),", scale: 0.7, font: "goldFont" },
       { text: "t0nchi7 and Lasokar.", scale: 0.7, font: "goldFont" },
       { text: "© 2026 RobTop Games. All rights reserved.", scale: 0.4, font: "Arial", color: 0x000000 },
     ]; 
@@ -7155,22 +7141,7 @@ _applyMirrorEffect() {
     const _0x165c06 = _0x452429[Math.floor(Math.random() * _0x452429.length)];
     const _0x45540f = 225;
     this._endLayerInternal.add(this.add.bitmapText(containerX + _0x45540f, _0x241209, "bigFont", _0x165c06, 40).setOrigin(0.5, 0.5).setScale(0.8).setCenterAlign());
-    this._endLayerInternal.add(this.add.image(containerX - _0x45540f, 352.5, "GJ_WebSheet", "getIt_001.png").setScale(1 / 1.5));
-    const _0x34b1bd = [{
-      key: "downloadApple_001",
-      url: "https://discord.gg/TfEzAVWPSJ"
-    }, {
-      key: "downloadSteam_001",
-      url: "https://store.steampowered.com/app/322170/Geometry_Dash"
-    }];
-    for (let _0x10f8cc = 0; _0x10f8cc < _0x34b1bd.length; _0x10f8cc++) {
-      const _0xd7310b = _0x34b1bd[_0x10f8cc];
-      const _0x1e3f82 = (_0x10f8cc - 1) * _0x45540f;
-      const _0x55a82e = 1 / 1.5;
-      const _0x4c7fb8 = this.add.image(containerX + _0x1e3f82, 437.5, "GJ_WebSheet", _0xd7310b.key + ".png").setScale(_0x55a82e).setInteractive();
-      this._endLayerInternal.add(_0x4c7fb8);
-      this._makeBouncyButton(_0x4c7fb8, _0x55a82e, () => window.open(_0xd7310b.url, "_blank"));
-    }
+
     _0x2de55e.width;
     this._endStarX = containerX + _0x45540f;
     this._endStarY = _0x241209 - 77.5;
