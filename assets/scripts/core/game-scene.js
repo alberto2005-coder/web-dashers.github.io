@@ -269,7 +269,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     this._makeBouncyButton(this._menuSettingsBtn, 1, () => {
       this._showSettingsScreen();
     }, () => this._menuActive && !this._settingsPopup);
-    this._menuAchBtn = this.add.image(screenWidth / 2 - 55, screenHeight - 90, "GJ_GameSheet03", "GJ_achBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
+    this._menuAchBtn = this.add.image(screenWidth / 2 - 55, screenHeight - 90, "GJ_GameSheet03", "GJ_achBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive();
     this._expandHitArea(this._menuAchBtn, 1);
     this._makeBouncyButton(this._menuAchBtn, 1, () => {
       this._buildAchievementsPopup();
@@ -4064,14 +4064,24 @@ _buildSettingsPopup() {
     const bounceContainer = this.add.container(xPos, centerY).setScale(0);
     this._achievementsPopup.add(bounceContainer);
 
-    // Panel background
+    // Panel background — taller panel to fit rows + arrows + label
     const cornerRadius = this.textures.get("square01_001").source[0].width * 0.325;
-    const panelBg = this._drawScale9(0, 0, 620, 430, "square01_001", cornerRadius, 16777215, 1);
+    const panelBg = this._drawScale9(0, 0, 600, 500, "square01_001", cornerRadius, 16777215, 1);
     bounceContainer.add(panelBg);
 
-    // Title
-    const title = this.add.bitmapText(0, -172, "goldFont", "Achievements", 40).setOrigin(0.5, 0.5);
+    // Title at the top
+    const title = this.add.bitmapText(0, -215, "goldFont", "Achievements", 38).setOrigin(0.5, 0.5);
     bounceContainer.add(title);
+
+    // Close button — top-left corner of panel
+    const closeBtn = this.add.image(-330, -265, "GJ_WebSheet", "GJ_closeBtn_001.png").setScale(0.85).setInteractive();
+    bounceContainer.add(closeBtn);
+    this._makeBouncyButton(closeBtn, 0.85, () => {
+      if (this._achievementsPopup) {
+        this._achievementsPopup.destroy();
+        this._achievementsPopup = null;
+      }
+    });
 
     // Achievement definitions
     const totalJumps = this._totalJumps || 0;
@@ -4079,16 +4089,18 @@ _buildSettingsPopup() {
     const totalLevels = window._completedLevels || 0;
     const isLoggedIn = window.AccountAPI && window.AccountAPI.currentUser;
     const achievements = [
-      { name: "First Jump",         desc: "Jump for the first time",             done: totalJumps >= 1 },
-      { name: "Jump Master",        desc: "Perform 1,000 total jumps",            done: totalJumps >= 1000 },
-      { name: "Leap Legend",        desc: "Perform 10,000 total jumps",           done: totalJumps >= 10000 },
-      { name: "Crash Test Dummy",   desc: "Die for the first time",              done: totalDeaths >= 1 },
-      { name: "Unstoppable",        desc: "Die 100 times total",                 done: totalDeaths >= 100 },
-      { name: "Geometry God",       desc: "Complete your first level",           done: totalLevels >= 1 },
-      { name: "Completionist",      desc: "Complete all available levels",       done: totalLevels >= 4 },
-      { name: "Cloud Saver",        desc: "Log in and save to the cloud",        done: !!isLoggedIn },
+      { name: "First Jump",       desc: "Jump for the first time",           done: totalJumps >= 1 },
+      { name: "Jump Master",      desc: "Perform 1,000 total jumps",          done: totalJumps >= 1000 },
+      { name: "Leap Legend",      desc: "Perform 10,000 total jumps",         done: totalJumps >= 10000 },
+      { name: "Crash Test Dummy", desc: "Die for the first time",            done: totalDeaths >= 1 },
+      { name: "Unstoppable",      desc: "Die 100 times total",               done: totalDeaths >= 100 },
+      { name: "Geometry God",     desc: "Complete your first level",         done: totalLevels >= 1 },
+      { name: "Completionist",    desc: "Complete all available levels",     done: totalLevels >= 4 },
+      { name: "Cloud Saver",      desc: "Log in and save to the cloud",      done: !!isLoggedIn },
     ];
     const itemsPerPage = 5;
+    const ROW_H = 58;        // height of each row
+    const LIST_TOP = -165;   // y of the first row centre
     let currentPage = 0;
     const totalPages = Math.ceil(achievements.length / itemsPerPage);
 
@@ -4100,17 +4112,20 @@ _buildSettingsPopup() {
       const startIdx = page * itemsPerPage;
       const pageItems = achievements.slice(startIdx, startIdx + itemsPerPage);
       pageItems.forEach((ach, i) => {
-        const rowY = -100 + i * 68;
-        const bgColor = i % 2 === 0 ? 0xac531e : 0xcf6d30;
-        const rowBg = this.add.rectangle(0, rowY, 560, 60, bgColor).setOrigin(0.5, 0.5);
+        const rowY = LIST_TOP + i * ROW_H;
+        const bgColor = i % 2 === 0 ? 0x7a3a0e : 0x9e5020;
+        const rowBg = this.add.rectangle(0, rowY, 540, ROW_H - 4, bgColor, 1).setOrigin(0.5, 0.5);
         pageGroup.add(rowBg);
+        // Check / lock icon
         const iconFrame = ach.done ? "GJ_checkOn_001.png" : "GJ_lock_001.png";
-        const icon = this.add.image(-250, rowY, "GJ_GameSheet03", iconFrame).setScale(0.7);
+        const icon = this.add.image(-240, rowY, "GJ_GameSheet03", iconFrame).setScale(0.65);
         pageGroup.add(icon);
-        const nameText = this.add.bitmapText(-210, rowY - 10, "bigFont", ach.name, 26).setOrigin(0, 0.5);
+        // Name
+        const nameText = this.add.bitmapText(-205, rowY - 9, "bigFont", ach.name, 24).setOrigin(0, 0.5);
         pageGroup.add(nameText);
-        const descText = this.add.text(-210, rowY + 12, ach.desc, {
-          fontSize: "18px", fontFamily: "Arial, sans-serif",
+        // Description
+        const descText = this.add.text(-205, rowY + 13, ach.desc, {
+          fontSize: "16px", fontFamily: "Arial, sans-serif",
           color: ach.done ? "#ffd700" : "#aaaaaa", align: "left"
         }).setOrigin(0, 0.5);
         pageGroup.add(descText);
@@ -4118,31 +4133,23 @@ _buildSettingsPopup() {
       pageLabel.setText(`${page + 1} / ${totalPages}`);
     };
 
-    // Page label
-    const pageLabel = this.add.bitmapText(0, 155, "bigFont", "1 / " + totalPages, 28).setOrigin(0.5, 0.5);
-    bounceContainer.add(pageLabel);
+    // Arrows and page label — positioned BELOW the list
+    const arrowsY  = LIST_TOP + itemsPerPage * ROW_H + 24; // just below last row
+    const labelY   = arrowsY + 34;
 
-    // Prev/next arrows
-    const prevArrow = this.add.image(-280, 0, "GJ_GameSheet03", "GJ_arrow_01_001.png").setFlipX(false).setScale(0.8).setInteractive();
-    const nextArrow = this.add.image(280, 0, "GJ_GameSheet03", "GJ_arrow_01_001.png").setFlipX(true).setScale(0.8).setInteractive();
+    const prevArrow = this.add.image(-220, arrowsY, "GJ_GameSheet03", "GJ_arrow_01_001.png").setFlipX(false).setScale(0.75).setInteractive();
+    const nextArrow = this.add.image( 220, arrowsY, "GJ_GameSheet03", "GJ_arrow_01_001.png").setFlipX(true ).setScale(0.75).setInteractive();
     bounceContainer.add(prevArrow);
     bounceContainer.add(nextArrow);
-    this._makeBouncyButton(prevArrow, 0.8, () => {
+    this._makeBouncyButton(prevArrow, 0.75, () => {
       if (currentPage > 0) { currentPage--; renderPage(currentPage); }
     });
-    this._makeBouncyButton(nextArrow, 0.8, () => {
+    this._makeBouncyButton(nextArrow, 0.75, () => {
       if (currentPage < totalPages - 1) { currentPage++; renderPage(currentPage); }
     });
 
-    // Close button
-    const closeBtn = this.add.image(-290, -195, "GJ_WebSheet", "GJ_closeBtn_001.png").setScale(0.85).setInteractive();
-    bounceContainer.add(closeBtn);
-    this._makeBouncyButton(closeBtn, 0.85, () => {
-      if (this._achievementsPopup) {
-        this._achievementsPopup.destroy();
-        this._achievementsPopup = null;
-      }
-    });
+    const pageLabel = this.add.bitmapText(0, labelY, "bigFont", "1 / " + totalPages, 26).setOrigin(0.5, 0.5);
+    bounceContainer.add(pageLabel);
 
     // Close on background click
     background.on("pointerup", () => {
