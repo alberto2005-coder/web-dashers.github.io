@@ -7286,9 +7286,8 @@ _applyMirrorEffect() {
     const _sCol3L = containerX - _sBtnW3 - _sGap;
     const _sCol3M = containerX;
     const _sCol3R = containerX + _sBtnW3 + _sGap;
-    const _sRow1Y = 155;
-    const _sRow2Y = 235;
-    const _sRow3Y = 312;
+    const _sRow1Y = 170;
+    const _sRow2Y = 250;
     const _makeSettingsBtn = (cx, cy, label, btnW, isActive, action) => {
         const grp = this.add.container(cx, cy);
         const tint = isActive ? 0xffffff : 0x666666;
@@ -7330,11 +7329,7 @@ _applyMirrorEffect() {
 
     _makeSettingsBtn(_sColL, _sRow1Y, "Account",    _sBtnW2, true, () => { this._buildAccountPopup(); });
     _makeSettingsBtn(_sColR, _sRow1Y, "How To Play", _sBtnW2, true, () => { this._buildHowToPlayPopup(); });
-    _makeSettingsBtn(_sColL, _sRow2Y, "Options",    _sBtnW2, true,  () => { this._buildSettingsPopup(); });
-    _makeSettingsBtn(_sColR, _sRow2Y, "Graphics",   _sBtnW2, false, null);
-    _makeSettingsBtn(_sCol3L, _sRow3Y, "Rate",      _sBtnW3, false, null);
-    _makeSettingsBtn(_sCol3M, _sRow3Y, "Songs",     _sBtnW3, false, null);
-    _makeSettingsBtn(_sCol3R, _sRow3Y, "Help",      _sBtnW3, false, null);
+    _makeSettingsBtn(containerX, _sRow2Y, "Options",    _sBtnW2, true,  () => { this._buildSettingsPopup(); });
 
     const lockIcon = this.add.image(containerX + 535, 30, "GJ_GameSheet03", "GJ_lock_open_001.png").setFlipX(false).setFlipY(false);
     lockIcon.setScale(0.9);
@@ -7345,7 +7340,7 @@ _applyMirrorEffect() {
     
     const _0x45b6e4 = 0.8;
     let _0xe44f6d = 250;
-    const sliderStartY = 430;
+    const sliderStartY = 390;
     const _0x22b43a = 0.7;
     const _0x41925a = this.textures.getFrame("GJ_WebSheet", "slidergroove.png");
     const _0x372782 = _0x41925a ? _0x41925a.width : 420;
