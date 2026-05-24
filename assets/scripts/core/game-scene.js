@@ -3296,6 +3296,329 @@ _buildSettingsPopup() {
         easeParams: [1, 0.6]
     });
   }
+  _buildAccountPopup() {
+    if (this._accountPopup) return;
+
+    const centerX = screenWidth / 2,
+        centerY = 320,
+        panelWidth = 640,
+        panelHeight = 440;
+
+    this._accountPopup = this.add.container(0, 0).setScrollFactor(0).setDepth(250);
+
+    const dim = this.add.rectangle(centerX, centerY, screenWidth, screenHeight, 0, 150 / 255).setInteractive();
+    this._accountPopup.add(dim);
+
+    const innerContainer = this.add.container(centerX, centerY).setScale(0);
+    this._accountPopup.add(innerContainer);
+
+    const corner = 0.325 * this.textures.get("GJ_square01").source[0].width;
+    const panel = this._drawScale9(0, 0, panelWidth, panelHeight, 'GJ_square01', corner, 16777215, 1);
+    innerContainer.add(panel);
+
+    const closeBtn = this.add.image(-(panelWidth / 2) + 10, -(panelHeight / 2) + 10, 'GJ_WebSheet', "GJ_closeBtn_001.png").setScale(0.8).setInteractive();
+    innerContainer.add(closeBtn);
+    this._makeBouncyButton(closeBtn, 0.8, () => {
+        this._accountPopup.destroy();
+        this._accountPopup = null;
+    });
+
+    const pageTitle = this.add.bitmapText(0, -(panelHeight / 2) + 45, "bigFont", "Account", 40).setOrigin(0.5);
+    innerContainer.add(pageTitle);
+
+    const contentContainer = this.add.container(0, 0);
+    innerContainer.add(contentContainer);
+
+    const refreshContent = () => {
+        contentContainer.removeAll(true);
+        const user = window.AccountAPI.currentUser;
+
+        if (!user) {
+            const desc = this.add.bitmapText(0, -60, "goldFont", "Log in or register to backup/restore\nyour progress on the cloud!", 28).setOrigin(0.5).setCenterAlign();
+            contentContainer.add(desc);
+
+            const loginBtn = this.add.container(-130, 60);
+            const btn9Login = this.add.nineslice(0, 0, "GJ_button01", null, 180, 55, corner, corner, corner, corner).setOrigin(0.5);
+            const loginText = this.add.bitmapText(0, -3, "goldFont", "Log In", 38).setOrigin(0.5);
+            loginBtn.add([btn9Login, loginText]);
+            contentContainer.add(loginBtn);
+
+            const hitLogin = this.add.zone(0, 0, 180, 55).setInteractive();
+            loginBtn.add(hitLogin);
+            this._makeBouncyButton(hitLogin, 1, () => {
+                this._showAccountAuthModal("login", () => refreshContent());
+            });
+
+            const registerBtn = this.add.container(130, 60);
+            const btn9Register = this.add.nineslice(0, 0, "GJ_button01", null, 180, 55, corner, corner, corner, corner).setOrigin(0.5);
+            const registerText = this.add.bitmapText(0, -3, "goldFont", "Register", 38).setOrigin(0.5);
+            registerBtn.add([btn9Register, registerText]);
+            contentContainer.add(registerBtn);
+
+            const hitRegister = this.add.zone(0, 0, 180, 55).setInteractive();
+            registerBtn.add(hitRegister);
+            this._makeBouncyButton(hitRegister, 1, () => {
+                this._showAccountAuthModal("register", () => refreshContent());
+            });
+
+        } else {
+            const welcome = this.add.bitmapText(0, -110, "goldFont", "Logged in as:", 30).setOrigin(0.5);
+            const username = this.add.bitmapText(0, -70, "bigFont", user.username, 36).setOrigin(0.5);
+            contentContainer.add([welcome, username]);
+
+            const btnWidth = 220;
+            const btnHeight = 50;
+
+            const saveBtn = this.add.container(-120, -10);
+            const btn9Save = this.add.nineslice(0, 0, "GJ_button01", null, btnWidth, btnHeight, corner, corner, corner, corner).setOrigin(0.5);
+            const saveText = this.add.bitmapText(0, -3, "goldFont", "Save to Cloud", 30).setOrigin(0.5);
+            saveBtn.add([btn9Save, saveText]);
+            contentContainer.add(saveBtn);
+
+            const hitSave = this.add.zone(0, 0, btnWidth, btnHeight).setInteractive();
+            saveBtn.add(hitSave);
+            this._makeBouncyButton(hitSave, 1, async () => {
+                try {
+                    saveText.setText("Saving...");
+                    const data = window.AccountAPI.collectLocalData();
+                    await window.AccountAPI.setCloudSave(data);
+                    saveText.setText("Save to Cloud");
+                    this._showAccountToast("Save Successful!");
+                    this._audio.playEffect("highscoreGet02");
+                } catch (err) {
+                    saveText.setText("Save to Cloud");
+                    this._showAccountToast("Save Failed: " + err.message, true);
+                }
+            });
+
+            const loadBtn = this.add.container(120, -10);
+            const btn9Load = this.add.nineslice(0, 0, "GJ_button01", null, btnWidth, btnHeight, corner, corner, corner, corner).setOrigin(0.5);
+            const loadText = this.add.bitmapText(0, -3, "goldFont", "Load from Cloud", 30).setOrigin(0.5);
+            loadBtn.add([btn9Load, loadText]);
+            contentContainer.add(loadBtn);
+
+            const hitLoad = this.add.zone(0, 0, btnWidth, btnHeight).setInteractive();
+            loadBtn.add(hitLoad);
+            this._makeBouncyButton(hitLoad, 1, async () => {
+                try {
+                    loadText.setText("Loading...");
+                    const save = await window.AccountAPI.getCloudSave();
+                    if (!save || !save.save_data) {
+                        throw new Error("No save data found on cloud");
+                    }
+                    window.AccountAPI.applyLocalData(save.save_data);
+                    loadText.setText("Load from Cloud");
+                    this._showAccountToast("Load Successful! Reloading...");
+                    this._audio.playEffect("highscoreGet02");
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } catch (err) {
+                    loadText.setText("Load from Cloud");
+                    this._showAccountToast("Load Failed: " + err.message, true);
+                }
+            });
+
+            const logoutBtn = this.add.container(-120, 70);
+            const btn9Logout = this.add.nineslice(0, 0, "GJ_button01", null, btnWidth, btnHeight, corner, corner, corner, corner).setOrigin(0.5).setTint(0xcc6666);
+            const logoutText = this.add.bitmapText(0, -3, "goldFont", "Log Out", 30).setOrigin(0.5);
+            logoutBtn.add([btn9Logout, logoutText]);
+            contentContainer.add(logoutBtn);
+
+            const hitLogout = this.add.zone(0, 0, btnWidth, btnHeight).setInteractive();
+            logoutBtn.add(hitLogout);
+            this._makeBouncyButton(hitLogout, 1, async () => {
+                await window.AccountAPI.logout();
+                refreshContent();
+            });
+
+            const unlinkBtn = this.add.container(120, 70);
+            const btn9Unlink = this.add.nineslice(0, 0, "GJ_button01", null, btnWidth, btnHeight, corner, corner, corner, corner).setOrigin(0.5).setTint(0xff3333);
+            const unlinkText = this.add.bitmapText(0, -3, "goldFont", "Unlink", 30).setOrigin(0.5);
+            unlinkBtn.add([btn9Unlink, unlinkText]);
+            contentContainer.add(unlinkBtn);
+
+            const hitUnlink = this.add.zone(0, 0, btnWidth, btnHeight).setInteractive();
+            unlinkBtn.add(hitUnlink);
+            this._makeBouncyButton(hitUnlink, 1, async () => {
+                if (confirm("WARNING: This will log you out AND wipe your local save data! Are you sure?")) {
+                    await window.AccountAPI.unlinkAccount();
+                    refreshContent();
+                    location.reload();
+                }
+            });
+        }
+    };
+
+    refreshContent();
+
+    this.tweens.add({
+        targets: innerContainer,
+        scale: 1,
+        duration: 660,
+        ease: "Elastic.Out",
+        easeParams: [1, 0.6]
+    });
+  }
+
+  _showAccountAuthModal(mode, onSuccess) {
+    const isRegister = mode === "register";
+    const overlay = document.createElement("div");
+    overlay.className = "webdash-modal-overlay";
+    overlay.id = "webdash-auth-overlay";
+
+    const card = document.createElement("div");
+    card.className = "webdash-modal-card";
+
+    const title = document.createElement("h2");
+    title.className = "webdash-modal-title";
+    title.textContent = isRegister ? "Register Account" : "Log In";
+    card.appendChild(title);
+
+    const form = document.createElement("form");
+    form.className = "webdash-form";
+
+    const userGroup = document.createElement("div");
+    userGroup.className = "webdash-input-group";
+    const userInput = document.createElement("input");
+    userInput.type = "text";
+    userInput.required = true;
+    userInput.placeholder = "Username";
+    userInput.autocomplete = "username";
+    userInput.className = "webdash-input";
+    userGroup.appendChild(userInput);
+    form.appendChild(userGroup);
+
+    let emailInput = null;
+    if (isRegister) {
+      const emailGroup = document.createElement("div");
+      emailGroup.className = "webdash-input-group";
+      emailInput = document.createElement("input");
+      emailInput.type = "email";
+      emailInput.placeholder = "Email (Optional)";
+      emailInput.autocomplete = "email";
+      emailInput.className = "webdash-input";
+      emailGroup.appendChild(emailInput);
+      form.appendChild(emailGroup);
+    }
+
+    const passGroup = document.createElement("div");
+    passGroup.className = "webdash-input-group";
+    const passInput = document.createElement("input");
+    passInput.type = "password";
+    passInput.required = true;
+    passInput.placeholder = "Password";
+    passInput.autocomplete = isRegister ? "new-password" : "current-password";
+    passInput.className = "webdash-input";
+    passGroup.appendChild(passInput);
+    form.appendChild(passGroup);
+
+    const errorMsg = document.createElement("div");
+    errorMsg.className = "webdash-error-msg";
+    form.appendChild(errorMsg);
+
+    const btnRow = document.createElement("div");
+    btnRow.className = "webdash-btn-row";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "webdash-btn webdash-btn-cancel";
+    cancelBtn.textContent = "Cancel";
+    btnRow.appendChild(cancelBtn);
+
+    const submitBtn = document.createElement("button");
+    submitBtn.type = "submit";
+    submitBtn.className = "webdash-btn webdash-btn-submit";
+    submitBtn.textContent = "Submit";
+    btnRow.appendChild(submitBtn);
+
+    form.appendChild(btnRow);
+    card.appendChild(form);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    setTimeout(() => userInput.focus(), 100);
+
+    const closeModal = () => {
+      if (overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
+    };
+
+    cancelBtn.addEventListener("click", closeModal);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
+        closeModal();
+      }
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = userInput.value.trim();
+      const password = passInput.value;
+      const email = emailInput ? emailInput.value.trim() : null;
+
+      if (!username || !password) {
+        errorMsg.textContent = "Fields cannot be empty";
+        return;
+      }
+
+      userInput.disabled = true;
+      passInput.disabled = true;
+      if (emailInput) emailInput.disabled = true;
+      submitBtn.disabled = true;
+      cancelBtn.disabled = true;
+      submitBtn.textContent = "Please wait...";
+      errorMsg.textContent = "";
+
+      try {
+        if (isRegister) {
+          await window.AccountAPI.register(username, email, password);
+        } else {
+          await window.AccountAPI.login(username, password);
+        }
+        closeModal();
+        if (onSuccess) onSuccess();
+      } catch (err) {
+        userInput.disabled = false;
+        passInput.disabled = false;
+        if (emailInput) emailInput.disabled = false;
+        submitBtn.disabled = false;
+        cancelBtn.disabled = false;
+        submitBtn.textContent = "Submit";
+        errorMsg.textContent = err.message || "An error occurred";
+      }
+    });
+  }
+
+  _showAccountToast(msg, isError = false) {
+    const toast = this.add.container(screenWidth / 2, 480).setScrollFactor(0).setDepth(300);
+    const bg = this.add.rectangle(0, 0, 520, 50, 0x000000, 0.85).setOrigin(0.5);
+    const tint = isError ? 0xff4a4a : 0xffd700;
+    const text = this.add.bitmapText(0, -3, "goldFont", msg, 22).setOrigin(0.5).setTint(tint);
+    toast.add([bg, text]);
+    
+    toast.setScale(0);
+    this.tweens.add({
+        targets: toast,
+        scale: 1,
+        duration: 300,
+        ease: "Back.Out"
+    });
+
+    this.time.delayedCall(2800, () => {
+        if (toast && toast.destroy) {
+            this.tweens.add({
+                targets: toast,
+                scale: 0,
+                duration: 300,
+                ease: "Back.In",
+                onComplete: () => toast.destroy()
+            });
+        }
+    });
+  }
+
   _saveSettings() {
     const settings = {
         noclip: window.noClip,
@@ -7009,7 +7332,7 @@ _applyMirrorEffect() {
         return grp;
     };
 
-    _makeSettingsBtn(_sColL, _sRow1Y, "Account",    _sBtnW2, false, null);
+    _makeSettingsBtn(_sColL, _sRow1Y, "Account",    _sBtnW2, true, () => { this._buildAccountPopup(); });
     _makeSettingsBtn(_sColR, _sRow1Y, "How To Play", _sBtnW2, true, () => { this._buildHowToPlayPopup(); });
     _makeSettingsBtn(_sColL, _sRow2Y, "Options",    _sBtnW2, true,  () => { this._buildSettingsPopup(); });
     _makeSettingsBtn(_sColR, _sRow2Y, "Graphics",   _sBtnW2, false, null);
