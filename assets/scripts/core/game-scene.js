@@ -7524,17 +7524,14 @@ _applyMirrorEffect() {
     const _rowLeft = _0x2a115c + 7.8;
     const _rowRight = _0x2a115c + _0x595215 - 7.8;
     const _rowWidth = _rowRight - _rowLeft;
-    const _rowCount = 6;
+    const _rowCount = 4;
     const _rowH = (_rowPanelBottom - _rowPanelTop) / _rowCount;
 
     const rows = [
       { label: "Total Jumps:",         value: String(this._totalJumps || 0) },
       { label: "Total Attempts:",       value: String(this._attempts || 1) },
       { label: "Completed Levels:",     value: String(window._completedLevels || 0) },
-      { label: "Total Deaths:",      value: String(this._totalDeaths || 0) },
-      { label: "???:",   value: String(window._totalDiamonds || '?') },
-      { label: "???:", value: String(window._totalOrbs || '?') },
-      
+      { label: "Total Deaths:",      value: String(this._totalDeaths || 0) }
     ];
     rows.forEach((row, index) => {
       const rowCenterY = _rowPanelTop + index * _rowH + _rowH / 2;
