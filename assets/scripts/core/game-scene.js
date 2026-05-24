@@ -278,21 +278,17 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     this._makeBouncyButton(this._menuUpdateLogBtn, 0.64, () => {
       this._buildUpdateLogPopup();
     }, () => this._menuActive && !this._updateLogPopup);
-    this._menuSettingsBtn = this.add.image(centerX + 92, screenHeight - 90, "GJ_GameSheet03", "GJ_optionsBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
+    this._menuSettingsBtn = this.add.image(centerX - 110, screenHeight - 90, "GJ_GameSheet03", "GJ_optionsBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
     this._expandHitArea(this._menuSettingsBtn, 1);
     this._makeBouncyButton(this._menuSettingsBtn, 1, () => {
       this._showSettingsScreen();
     }, () => this._menuActive && !this._settingsPopup);
-    this._menuStatsBtn = this.add.image(centerX + 202, screenHeight - 90, "GJ_GameSheet03", "GJ_statsBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
+    this._menuStatsBtn = this.add.image(centerX, screenHeight - 90, "GJ_GameSheet03", "GJ_statsBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
     this._expandHitArea(this._menuStatsBtn, 1);
     this._makeBouncyButton(this._menuStatsBtn, 1, () => {
       this._showStatsScreen();
     }, () => this._menuActive);
-    this._menuAchievementsBtn = this.add.image(centerX - 12, screenHeight - 90, "GJ_GameSheet03", "GJ_achBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setTint(0x666666);
-    this._expandHitArea(this._menuAchievementsBtn, 1);
-    this._makeBouncyButton(this._menuAchievementsBtn, 1, () => {
-    }, () => this._menuActive);
-    this._menuNewgroundsBtn = this.add.image(centerX + 312, screenHeight - 90, "GJ_GameSheet03", "GJ_ngBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
+    this._menuNewgroundsBtn = this.add.image(centerX + 110, screenHeight - 90, "GJ_GameSheet03", "GJ_ngBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
     this._expandHitArea(this._menuNewgroundsBtn, 1);
     this._makeBouncyButton(this._menuNewgroundsBtn, 1, () => {
       this._buildNewgroundsPopup();
@@ -394,47 +390,25 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         "GJ_searchBtn_001.png",
       ];
 
-      const cols = 5;
-      const btnScale = 0.77;
-      const btnSize = 209 * btnScale;
-      const gapX = 18;
-      const gapY = 18;
-      const gridW = cols * btnSize + (cols - 1) * gapX;
-      const gridStartX = sw / 2 - gridW / 2 + btnSize / 2;
-      const rows = Math.ceil(menuButtons.length / cols);
-      const gridH = rows * btnSize + (rows - 1) * gapY;
-      const gridStartY = sh / 2 - gridH / 2 + btnSize / 2;
-      menuButtons.forEach((frame, idx) => {
-        const col = idx % cols;
-        const row = Math.floor(idx / cols);
-        const bx = gridStartX + col * (btnSize + gapX);
-        const by = gridStartY + row * (btnSize + gapY);
-        const btn = this.add.image(bx, by, "GJ_GameSheet04", frame)
-          .setScrollFactor(0).setDepth(104).setScale(btnScale);
-        const isSearchButton  = frame === "GJ_searchBtn_001.png";
-        const isFeaturedButton = frame === "GJ_featuredBtn_001.png";
-        const isEditorButton = frame === "GJ_createBtn_001.png"; 
-        if (isSearchButton) {
-          btn.setInteractive();
-          this._makeBouncyButton(btn, btnScale, () => {
-            this._closeCreatorMenu(true);
-            this._openSearchMenu();
-          }, () => true);
-        } else if (isFeaturedButton) {
-          btn.setInteractive();
-          this._makeBouncyButton(btn, btnScale, () => {
-            this._closeCreatorMenu(true);
-            this._openOnlineLevelsScene({ type: 6 });
-          }, () => true);
-        } else if (isEditorButton) {
-          btn.setInteractive();
-          this._makeBouncyButton(btn, btnScale, () => {
-            this._closeCreatorMenu(true);
-            this._openEditorMenu();
-          }, () => true);
-        } else {
-          btn.setTint(0x666666);
-        }
+      const activeButtons = [
+        { frame: "GJ_createBtn_001.png", action: () => { this._closeCreatorMenu(true); this._openEditorMenu(); } },
+        { frame: "GJ_featuredBtn_001.png", action: () => { this._closeCreatorMenu(true); this._openOnlineLevelsScene({ type: 6 }); } },
+        { frame: "GJ_searchBtn_001.png", action: () => { this._closeCreatorMenu(true); this._openSearchMenu(); } }
+      ];
+
+      const btnScale = 0.95;
+      const btnW = 209 * btnScale;
+      const gapX = 50;
+      const totalW = activeButtons.length * btnW + (activeButtons.length - 1) * gapX;
+      const startX = sw / 2 - totalW / 2 + btnW / 2;
+      const by = sh / 2;
+
+      activeButtons.forEach((btnDef, idx) => {
+        const bx = startX + idx * (btnW + gapX);
+        const btn = this.add.image(bx, by, "GJ_GameSheet04", btnDef.frame)
+          .setScrollFactor(0).setDepth(104).setScale(btnScale).setInteractive();
+        
+        this._makeBouncyButton(btn, btnScale, btnDef.action, () => true);
         this._creatorOverlayObjects.push(btn);
       });
     };
@@ -4382,9 +4356,6 @@ _buildSettingsPopup() {
     }
     if (this._menuSettingsBtn) {
       this._menuSettingsBtn.setVisible(false);
-    }
-    if (this._menuAchievementsBtn) {
-      this._menuAchievementsBtn.setVisible(false);
     }
     if (this._menuStatsBtn) {
       this._menuStatsBtn.setVisible(false);
