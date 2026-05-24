@@ -869,44 +869,67 @@ if (this.p.isFlying || this.p.isUfo) {
         }
       }
     } else {
-      for (const layer of this._spiderLayers) {
-        if (layer) {
-          layer.sprite.setVisible(false);
+      // Update slope tilt — fades to 0 when airborne
+      if (!this.p.onGround) this._onSlopeAngle = 0;
+      const _slopeT = this._onSlopeAngle || 0;
+
+      // Handle spider mode layers separately
+      if (this.p.isSpider) {
+        // Position spider layers at player position
+        for (const layer of this._spiderLayers) {
+          if (layer) {
+            const _miniS = this.p.isMini ? 0.6 : 1;
+            layer.sprite.x = _0x7f0705;
+            layer.sprite.y = _0x1a433c;
+            layer.sprite.rotation = (this.p.mirrored ? -_slopeT : _slopeT);
+            layer.sprite.scaleY = (this.p.gravityFlipped ? -_miniS : _miniS);
+            layer.sprite.scaleX = (this.p.mirrored ? -_miniS : _miniS);
+          }
         }
-      }
-      
-      for (const playerLayer of this._allLayers) {
-        if (playerLayer) {
+        // Apply spider walking animation
+        if (this.p.onGround) {
+          this._spiderAnimTime = (this._spiderAnimTime || 0) + 16;
+          const _frameIdx = Math.floor(this._spiderAnimTime / 80) % 4;
+          const _spiderFrameSuffix = `_0${_frameIdx + 1}_001.png`;
+          const _spiderBase = `${window.currentSpider}_01`;
+          const _newFrame = `${_spiderBase}${_spiderFrameSuffix}`;
+          if (this._spiderSpriteLayer && this._spiderSpriteLayer.sprite.frame.name !== _newFrame) {
+            const _fi = getAtlasFrame(this._scene, _newFrame);
+            if (_fi) this._spiderSpriteLayer.sprite.setTexture(_fi.atlas, _fi.frame);
+          }
+        } else {
+          this._spiderAnimTime = 0;
+        }
+        // Hide non-spider layers (cube layers while in spider mode)
+        for (const playerLayer of this._playerLayers) {
+          if (playerLayer) playerLayer.sprite.setVisible(false);
+        }
+      } else {
+        // Hide spider layers when not in spider mode
+        for (const layer of this._spiderLayers) {
+          if (layer) layer.sprite.setVisible(false);
+        }
+        // Position all other layers normally
+        for (const playerLayer of this._allLayers) {
+          if (playerLayer) {
+            const isSpiderLayer = this._spiderLayers.includes(playerLayer);
+            if (isSpiderLayer) continue; // already handled
             playerLayer.sprite.x = _0x7f0705;
             playerLayer.sprite.y = _0x1a433c;
             const isBallLayer = this._ballLayers.includes(playerLayer);
-            playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -playerRotation : playerRotation);
+            let _rot = isBallLayer ? playerRotation : (this.p.mirrored ? -playerRotation : playerRotation);
+            // Add slope tilt to cube (non-ball, non-wave) layers
+            if (!isBallLayer && !this._waveLayers.includes(playerLayer) && this.p.onGround) {
+              _rot += (this.p.mirrored ? -_slopeT : _slopeT);
+            }
+            playerLayer.sprite.rotation = _rot;
             let _miniS = this.p.isMini ? 0.6 : 1;
             if (this.p.isWave && this._waveLayers.includes(playerLayer)) {
               _miniS *= 0.94; //fix wave size
             }
             playerLayer.sprite.scaleY = (this.p.gravityFlipped ? -_miniS : _miniS);
             playerLayer.sprite.scaleX = (this.p.mirrored ? -_miniS : _miniS);
-        }
-      }
-      for (const layer of this._spiderLayers) {
-        if (layer) {
-          layer.sprite.setVisible(false);
-        }
-      }
-      
-      for (const playerLayer of this._allLayers) {
-        if (playerLayer) {
-            playerLayer.sprite.x = _0x7f0705;
-            playerLayer.sprite.y = _0x1a433c;
-            const isBallLayer = this._ballLayers.includes(playerLayer);
-            playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -playerRotation : playerRotation);
-            let _miniS = this.p.isMini ? 0.6 : 1;
-            if (this.p.isWave && this._waveLayers.includes(playerLayer)) {
-              _miniS *= 0.94; //fix wave size
-            }
-            playerLayer.sprite.scaleY = (this.p.gravityFlipped ? -_miniS : _miniS);
-            playerLayer.sprite.scaleX = (this.p.mirrored ? -_miniS : _miniS);
+          }
         }
       }
     }
@@ -1099,12 +1122,19 @@ if (this.p.isFlying || this.p.isUfo) {
     this.p._spiderTeleportPending = false;
     this.stopRotation();
     this._rotation = 0;
-    // use cube icon for spider mode (spider icon not ready yet)
-    this.setCubeVisible(true);
+    this._onSlopeAngle = 0;
+    this._spiderAnimTime = 0;
+    // Show spider sprite layers; hide cube/ball/ship/wave
+    this.setCubeVisible(false);
     this.setBallVisible(false);
     this.setShipVisible(false);
     this.setWaveVisible(false);
-    this.setSpiderVisible(false);
+    if (this._spiderLayers && this._spiderLayers.length > 0) {
+      this.setSpiderVisible(true);
+    } else {
+      // Fallback if spider assets not loaded
+      this.setCubeVisible(true);
+    }
     let _y = this.p.y;
     if (portal) _y = portal.portalY !== undefined ? portal.portalY : portal.y;
     this._gameLayer.setFlyMode(true, _y + a, f - a * 2, true);
@@ -2493,6 +2523,45 @@ _updateWaveJump() {
               this.p.onCeiling = true;
               this.p.collideTop = bottom;
               continue;
+            }
+          }
+        } else if (_colType === "slope") {
+          // --- Slope collision resolution ---
+          const surfaceY = gameObj.getSlopeSurfaceY(pieceWidth);
+          if (surfaceY !== null) {
+            if (!this.p.gravityFlipped) {
+              // Normal gravity: player lands on top of slope
+              const playerFeet = playersY + playerSize - gamemodeAddition;
+              const prevFeet   = playersLastY + playerSize - gamemodeAddition;
+              if (playerFeet >= surfaceY - 4 && prevFeet <= surfaceY + 8) {
+                const snappedY = surfaceY - playerSize + gamemodeAddition;
+                if (this.p.y >= snappedY - 2) {
+                  this.p.y = snappedY;
+                  this.hitGround();
+                  _0x30410f = true;
+                  this.p.collideBottom = surfaceY;
+                  this._onSlopeAngle = gameObj.getSlopeAngleRad();
+                  continue;
+                }
+              } else if (playerFeet > surfaceY + 8 && pieceWidth > gameObj.x - gameObj.w / 2 && pieceWidth < gameObj.x + gameObj.w / 2) {
+                // Player has gone below the surface — side wall hit
+                if (!window.noClip) { this.killPlayer(); return; }
+              }
+            } else {
+              // Flipped gravity: player lands on ceiling/underside of slope
+              const playerHead = playersY - playerSize + gamemodeAddition;
+              const prevHead   = playersLastY - playerSize + gamemodeAddition;
+              if (playerHead <= surfaceY + 4 && prevHead >= surfaceY - 8) {
+                const snappedY = surfaceY + playerSize - gamemodeAddition;
+                if (this.p.y <= snappedY + 2) {
+                  this.p.y = snappedY;
+                  this.hitGround();
+                  _0x30410f = true;
+                  this.p.collideTop = surfaceY;
+                  this._onSlopeAngle = -gameObj.getSlopeAngleRad();
+                  continue;
+                }
+              }
             }
           }
         }

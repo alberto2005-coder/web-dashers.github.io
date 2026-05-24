@@ -1275,6 +1275,20 @@ window.LevelObject = class LevelObject {
       this.objects.push(collider);
       hasCollisionEntry = true;
       this._addCollisionToSection(collider);
+    } else if (objectDef.type === slopeType) {
+      const data = _SLOPE_DATA[levelObj.id] || { gw: 1, gh: 1, angle: 45, sq: false };
+      const w = data.gw * a;
+      const h = data.gh * a;
+      const collider = new Collider(slopeType, worldX, worldY, w, h, levelObj.rot || 0);
+      collider.slopeAngleDeg = data.angle;
+      collider.slopeIsFilled = data.sq;
+      collider.slopeDir = levelObj.flipX ? -1 : 1;
+      collider.slopeFlipY = !!levelObj.flipY;
+      collider.objid = levelObj.id;
+      registerCollider(collider);
+      this.objects.push(collider);
+      hasCollisionEntry = true;
+      this._addCollisionToSection(collider);
     } else if (objectDef.type === hazardType) {
       let hitW = 0;
       let hitH = 0;
@@ -1634,6 +1648,23 @@ window.LevelObject = class LevelObject {
       }
       this._visMinSec = particleScale;
       this._visMaxSec = sliderHeight;
+    }
+
+    // Fine-grained culling of individual sprites in active sections
+    const leftMargin = _0xa5f1e1 - 200;
+    const rightMargin = _0xa5f1e1 + screenWidth + 200;
+    
+    for (let secIdx = particleScale; secIdx <= sliderHeight; secIdx++) {
+      const section = this._sections[secIdx];
+      if (section) {
+        for (let i = 0; i < section.length; i++) {
+          const spr = section[i];
+          if (spr && spr.setVisible) {
+            const onScreen = spr._eeWorldX >= leftMargin && spr._eeWorldX <= rightMargin;
+            spr.setVisible(onScreen);
+          }
+        }
+      }
     }
   }
   getNearbySectionObjects(_0x2e85c7) {

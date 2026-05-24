@@ -58,6 +58,7 @@ class PracticeMode {
       groundY: scene._level._groundY,
       ceilingY: scene._level._ceilingY,
       speed: playerSpeed,
+      musicTime: playerWorldX / 623.16,
       timestamp: Date.now()
     };
     this.checkpoints.push(checkpoint);
@@ -263,17 +264,22 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     this._makeBouncyButton(this._menuUpdateLogBtn, 0.64, () => {
       this._buildUpdateLogPopup();
     }, () => this._menuActive && !this._updateLogPopup);
-    this._menuSettingsBtn = this.add.image(screenWidth / 2 - 110, screenHeight - 90, "GJ_GameSheet03", "GJ_optionsBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
+    this._menuSettingsBtn = this.add.image(screenWidth / 2 - 165, screenHeight - 90, "GJ_GameSheet03", "GJ_optionsBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
     this._expandHitArea(this._menuSettingsBtn, 1);
     this._makeBouncyButton(this._menuSettingsBtn, 1, () => {
       this._showSettingsScreen();
     }, () => this._menuActive && !this._settingsPopup);
-    this._menuStatsBtn = this.add.image(screenWidth / 2, screenHeight - 90, "GJ_GameSheet03", "GJ_statsBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
+    this._menuAchBtn = this.add.image(screenWidth / 2 - 55, screenHeight - 90, "GJ_GameSheet03", "GJ_achBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
+    this._expandHitArea(this._menuAchBtn, 1);
+    this._makeBouncyButton(this._menuAchBtn, 1, () => {
+      this._buildAchievementsPopup();
+    }, () => this._menuActive && !this._achievementsPopup);
+    this._menuStatsBtn = this.add.image(screenWidth / 2 + 55, screenHeight - 90, "GJ_GameSheet03", "GJ_statsBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
     this._expandHitArea(this._menuStatsBtn, 1);
     this._makeBouncyButton(this._menuStatsBtn, 1, () => {
       this._showStatsScreen();
     }, () => this._menuActive);
-    this._menuNewgroundsBtn = this.add.image(screenWidth / 2 + 110, screenHeight - 90, "GJ_GameSheet03", "GJ_ngBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
+    this._menuNewgroundsBtn = this.add.image(screenWidth / 2 + 165, screenHeight - 90, "GJ_GameSheet03", "GJ_ngBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
     this._expandHitArea(this._menuNewgroundsBtn, 1);
     this._makeBouncyButton(this._menuNewgroundsBtn, 1, () => {
       this._buildNewgroundsPopup();
@@ -4047,6 +4053,117 @@ _buildSettingsPopup() {
       this._updateLogPopup = null;
     }
   }
+  _buildAchievementsPopup() {
+    if (this._achievementsPopup) return;
+    const xPos = screenWidth / 2;
+    const centerY = screenHeight / 2;
+    this._achievementsPopup = this.add.container(0, 0).setScrollFactor(0).setDepth(1000);
+    const background = this.add.rectangle(xPos, centerY, screenWidth, screenHeight, 0, 120 / 255);
+    background.setInteractive();
+    this._achievementsPopup.add(background);
+    const bounceContainer = this.add.container(xPos, centerY).setScale(0);
+    this._achievementsPopup.add(bounceContainer);
+
+    // Panel background
+    const cornerRadius = this.textures.get("square01_001").source[0].width * 0.325;
+    const panelBg = this._drawScale9(0, 0, 620, 430, "square01_001", cornerRadius, 16777215, 1);
+    bounceContainer.add(panelBg);
+
+    // Title
+    const title = this.add.bitmapText(0, -172, "goldFont", "Achievements", 40).setOrigin(0.5, 0.5);
+    bounceContainer.add(title);
+
+    // Achievement definitions
+    const totalJumps = this._totalJumps || 0;
+    const totalDeaths = this._totalDeaths || 0;
+    const totalLevels = window._completedLevels || 0;
+    const isLoggedIn = window.AccountAPI && window.AccountAPI.currentUser;
+    const achievements = [
+      { name: "First Jump",         desc: "Jump for the first time",             done: totalJumps >= 1 },
+      { name: "Jump Master",        desc: "Perform 1,000 total jumps",            done: totalJumps >= 1000 },
+      { name: "Leap Legend",        desc: "Perform 10,000 total jumps",           done: totalJumps >= 10000 },
+      { name: "Crash Test Dummy",   desc: "Die for the first time",              done: totalDeaths >= 1 },
+      { name: "Unstoppable",        desc: "Die 100 times total",                 done: totalDeaths >= 100 },
+      { name: "Geometry God",       desc: "Complete your first level",           done: totalLevels >= 1 },
+      { name: "Completionist",      desc: "Complete all available levels",       done: totalLevels >= 4 },
+      { name: "Cloud Saver",        desc: "Log in and save to the cloud",        done: !!isLoggedIn },
+    ];
+    const itemsPerPage = 5;
+    let currentPage = 0;
+    const totalPages = Math.ceil(achievements.length / itemsPerPage);
+
+    const pageGroup = this.add.container(0, 0);
+    bounceContainer.add(pageGroup);
+
+    const renderPage = (page) => {
+      pageGroup.removeAll(true);
+      const startIdx = page * itemsPerPage;
+      const pageItems = achievements.slice(startIdx, startIdx + itemsPerPage);
+      pageItems.forEach((ach, i) => {
+        const rowY = -100 + i * 68;
+        const bgColor = i % 2 === 0 ? 0xac531e : 0xcf6d30;
+        const rowBg = this.add.rectangle(0, rowY, 560, 60, bgColor).setOrigin(0.5, 0.5);
+        pageGroup.add(rowBg);
+        const iconFrame = ach.done ? "GJ_checkOn_001.png" : "GJ_lock_001.png";
+        const icon = this.add.image(-250, rowY, "GJ_GameSheet03", iconFrame).setScale(0.7);
+        pageGroup.add(icon);
+        const nameText = this.add.bitmapText(-210, rowY - 10, "bigFont", ach.name, 26).setOrigin(0, 0.5);
+        pageGroup.add(nameText);
+        const descText = this.add.text(-210, rowY + 12, ach.desc, {
+          fontSize: "18px", fontFamily: "Arial, sans-serif",
+          color: ach.done ? "#ffd700" : "#aaaaaa", align: "left"
+        }).setOrigin(0, 0.5);
+        pageGroup.add(descText);
+      });
+      pageLabel.setText(`${page + 1} / ${totalPages}`);
+    };
+
+    // Page label
+    const pageLabel = this.add.bitmapText(0, 155, "bigFont", "1 / " + totalPages, 28).setOrigin(0.5, 0.5);
+    bounceContainer.add(pageLabel);
+
+    // Prev/next arrows
+    const prevArrow = this.add.image(-280, 0, "GJ_GameSheet03", "GJ_arrow_01_001.png").setFlipX(false).setScale(0.8).setInteractive();
+    const nextArrow = this.add.image(280, 0, "GJ_GameSheet03", "GJ_arrow_01_001.png").setFlipX(true).setScale(0.8).setInteractive();
+    bounceContainer.add(prevArrow);
+    bounceContainer.add(nextArrow);
+    this._makeBouncyButton(prevArrow, 0.8, () => {
+      if (currentPage > 0) { currentPage--; renderPage(currentPage); }
+    });
+    this._makeBouncyButton(nextArrow, 0.8, () => {
+      if (currentPage < totalPages - 1) { currentPage++; renderPage(currentPage); }
+    });
+
+    // Close button
+    const closeBtn = this.add.image(-290, -195, "GJ_WebSheet", "GJ_closeBtn_001.png").setScale(0.85).setInteractive();
+    bounceContainer.add(closeBtn);
+    this._makeBouncyButton(closeBtn, 0.85, () => {
+      if (this._achievementsPopup) {
+        this._achievementsPopup.destroy();
+        this._achievementsPopup = null;
+      }
+    });
+
+    // Close on background click
+    background.on("pointerup", () => {
+      if (this._achievementsPopup) {
+        this._achievementsPopup.destroy();
+        this._achievementsPopup = null;
+      }
+    });
+
+    renderPage(0);
+
+    // Bounce-in animation
+    this.tweens.add({
+      targets: bounceContainer,
+      scale: { from: 0, to: 1 },
+      duration: 660,
+      ease: "Elastic.Out",
+      easeParams: [1, 0.6]
+    });
+  }
+
   _buildNewgroundsPopup() {
     if (this._newgroundsPopup || window.levelID) return;
     const xPos = screenWidth / 2;
@@ -4342,6 +4459,9 @@ _buildSettingsPopup() {
     }
     if (this._menuSettingsBtn) {
       this._menuSettingsBtn.setVisible(false);
+    }
+    if (this._menuAchBtn) {
+      this._menuAchBtn.setVisible(false);
     }
     if (this._menuStatsBtn) {
       this._menuStatsBtn.setVisible(false);
@@ -4967,6 +5087,17 @@ _buildSettingsPopup() {
     this._applyMirrorEffect();
     if (!this._audio.musicPlaying) {
       this._audio.startMusic();
+    } else {
+      // Seek music to the checkpoint's saved position (Practice Mode music sync)
+      const _cpMusicTime = checkpoint.musicTime || 0;
+      if (_cpMusicTime > 0 && this._audio && this._audio._music) {
+        try {
+          if (this._audio._music.seek !== undefined) {
+            this._audio.reset();
+            this._audio.startMusic(_cpMusicTime);
+          }
+        } catch(e) { /* ignore seek errors */ }
+      }
     }
 
     if (this._player && this._player._hitboxTrail) {
